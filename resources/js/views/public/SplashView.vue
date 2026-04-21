@@ -28,16 +28,19 @@
           </p>
           <div class="splash-cta-row splash-actions">
             <RouterLink class="btn-primary" to="/login">Employee Login</RouterLink>
-            <RouterLink class="btn-ghost" to="/register">New Registration</RouterLink>
+            <RouterLink class="btn-primary" to="/register">New Registration</RouterLink>
           </div>
         </div>
 
         <aside class="splash-card">
           <h2>Built for PMS Teams</h2>
+          <p class="splash-card-intro">Premier Egyptian offshore construction and services contractor.</p>
           <ul>
-            <li>Project folders by department and vessel scope</li>
-            <li>Controlled file sharing inside one company tenant</li>
-            <li>Audit-ready activity history and permission checks</li>
+            <li>Established as an EGPC company in 2001 with 40+ years cumulative experience.</li>
+            <li>Core business lines include offshore construction and offshore services.</li>
+            <li>Execution track record exceeds 800 completed projects across regional fields.</li>
+            <li>Delivered over 9,999 tons of platform installation scope.</li>
+            <li>Installed more than 3,999 km of subsea pipelines and cable laying works.</li>
           </ul>
         </aside>
       </div>
