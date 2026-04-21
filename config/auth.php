@@ -33,13 +33,18 @@ return [
     | users are actually retrieved out of your database or other storage
     | system used by the application. Typically, Eloquent is utilized.
     |
-    | Supported: "session"
+    | Supported: "session", "sanctum"
     |
     */
 
     'guards' => [
         'web' => [
             'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+        'sanctum' => [
+            'driver' => 'sanctum',
             'provider' => 'users',
         ],
     ],
@@ -113,5 +118,11 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    'default_superadmin' => [
+        'username' => env('DEFAULT_SUPERADMIN_USERNAME', ''),
+        'email' => env('DEFAULT_SUPERADMIN_EMAIL', ''),
+        'password' => env('DEFAULT_SUPERADMIN_PASSWORD', ''),
+    ],
 
 ];

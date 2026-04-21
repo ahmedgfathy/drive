@@ -2,11 +2,18 @@
     "$schema": "https://www.schemastore.org/package.json",
     "private": true,
     "type": "module",
+    "dependencies": {
+        "axios": "^1.11.0",
+        "pinia": "^3.0.3",
+        "vue": "^3.5.18",
+        "vue-router": "^4.5.1"
+    },
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite --host 127.0.0.1 --port 5173"
     },
     "devDependencies": {
+        "@vitejs/plugin-vue": "^6.0.1",
         "@tailwindcss/vite": "^4.0.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^3.0.0",
