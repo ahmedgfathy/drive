@@ -43,7 +43,7 @@ class AuthController extends Controller
         }
 
         try {
-            $directoryUser = $this->activeDirectory->authenticateByEmployeeId($login, $password);
+            $directoryUser = $this->activeDirectory->authenticateBySamAccountName($login, $password);
         } catch (Throwable $e) {
             report($e);
 

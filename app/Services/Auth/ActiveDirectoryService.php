@@ -7,16 +7,16 @@ use RuntimeException;
 class ActiveDirectoryService
 {
     /**
-     * Attempt to authenticate a user by employee ID against Active Directory.
+     * Attempt to authenticate a user by sAMAccountName against Active Directory.
      *
      * @return array<string, string>|null
      */
-    public function authenticateByEmployeeId(string $employeeId, string $password): ?array
+    public function authenticateBySamAccountName(string $samAccountName, string $password): ?array
     {
-        $employeeId = trim($employeeId);
+        $samAccountName = trim($samAccountName);
         $password = (string) $password;
 
-        if ($employeeId === '' || $password === '') {
+        if ($samAccountName === '' || $password === '') {
             return null;
         }
 
@@ -43,8 +43,8 @@ class ActiveDirectoryService
             $this->bind($connection, $bindUsername, $bindPassword);
 
             $filter = sprintf(
-                '(&(objectCategory=person)(objectClass=user)(employeeID=%s))',
-                ldap_escape($employeeId, '', LDAP_ESCAPE_FILTER)
+                '(&(objectCategory=person)(objectClass=user)(sAMAccountName=%s))',
+                ldap_escape($samAccountName, '', LDAP_ESCAPE_FILTER)
             );
 
             $attributes = [
@@ -85,13 +85,13 @@ class ActiveDirectoryService
             }
 
             return [
-                'employee_id' => $this->firstValue($entry, 'employeeid') ?: $employeeId,
+                'employee_id' => $this->firstValue($entry, 'employeeid') ?: $samAccountName,
                 'display_name' => $this->firstValue($entry, 'displayname')
                     ?: $this->firstValue($entry, 'cn')
-                    ?: $employeeId,
+                    ?: $samAccountName,
                 'email' => $this->firstValue($entry, 'mail')
                     ?: $this->firstValue($entry, 'userprincipalname')
-                    ?: $employeeId.'@pms.local',
+                    ?: $samAccountName.'@pms.local',
                 'samaccountname' => $this->firstValue($entry, 'samaccountname'),
                 'userprincipalname' => $this->firstValue($entry, 'userprincipalname'),
                 'dn' => $dn,

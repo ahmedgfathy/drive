@@ -4,12 +4,12 @@
       <img class="login-logo" src="https://www.pmsoffshore.com/assets/images/global/logo.svg" alt="PMS Offshore">
       <p class="login-label">Internal Access</p>
       <h1>Welcome Back</h1>
-      <p class="login-subtitle">Sign in with your employee ID and company password to access secure folders and project files.</p>
+      <p class="login-subtitle">Sign in with your AD username and company password to access secure folders and project files.</p>
 
       <form class="stack" @submit.prevent="submit">
         <label>
-          Employee ID
-          <input v-model="login" type="text" placeholder="Enter your employee ID, e.g. 2669" required>
+          AD Username
+          <input v-model="login" type="text" placeholder="Enter your AD username, e.g. 2696" required>
         </label>
         <label>
           Password
