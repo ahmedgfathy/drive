@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'active_directory' => [
+        'scheme' => env('AD_SCHEME', 'ldap'),
+        'host' => env('AD_HOST', ''),
+        'port' => (int) env('AD_PORT', 389),
+        'base_dn' => env('AD_BASE_DN', ''),
+        'bind_username' => env('AD_BIND_USERNAME', ''),
+        'bind_password' => env('AD_BIND_PASSWORD', ''),
+        'timeout' => (int) env('AD_TIMEOUT', 5),
+    ],
+
 ];
