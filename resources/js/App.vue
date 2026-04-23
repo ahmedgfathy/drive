@@ -67,20 +67,16 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import sharesService from './services/shares.service';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const isNoticeOpen = ref(false);
-
-const notifications = ref([
-  { id: 1, title: 'Operations-Q2.pdf', meta: 'Shared by Marine Ops Team' },
-  { id: 2, title: 'Safety-Checklist.xlsx', meta: 'Shared by HSE Department' },
-  { id: 3, title: 'Tender-Revision.zip', meta: 'Shared by Procurement' },
-]);
+const notifications = ref([]);
 
 const showPrivateShell = computed(() => Boolean(route.meta.requiresAuth));
 const displayName = computed(() => auth.user?.name || 'PMS User');
@@ -101,10 +97,63 @@ onMounted(async () => {
   if (auth.isAuthenticated && !auth.user) {
     await auth.fetchMe();
   }
+
+  if (auth.isAuthenticated) {
+    await loadNotifications();
+  }
 });
+
+watch(
+  () => auth.user?.id,
+  async (userId) => {
+    if (userId) {
+      await loadNotifications();
+      return;
+    }
+
+    notifications.value = [];
+  },
+  { immediate: false }
+);
 
 const signOut = async () => {
   await auth.logout();
   await router.push('/');
+};
+
+const loadNotifications = async () => {
+  try {
+    const response = await sharesService.list({ per_page: 10 });
+    const items = response.data.data ?? [];
+    notifications.value = items.map((item) => ({
+      id: item.id,
+      title: sharedTitle(item),
+      meta: sharedMeta(item),
+    }));
+  } catch {
+    notifications.value = [];
+  }
+};
+
+const sharedTitle = (item) => {
+  if (item.shareable_type?.includes('File')) {
+    return item.shareable?.original_name || 'Shared file';
+  }
+
+  if (item.shareable_type?.includes('Folder')) {
+    return item.shareable?.name || 'Shared folder';
+  }
+
+  return 'Shared item';
+};
+
+const sharedMeta = (item) => {
+  const owner = item.granted_by?.full_name
+    || item.granted_by?.name
+    || item.grantedBy?.full_name
+    || item.grantedBy?.name
+    || 'PMS Drive';
+
+  return `Shared by ${owner}`;
 };
 </script>

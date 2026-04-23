@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Shares;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ShareReceivedMail;
 use App\Models\ActivityLog;
 use App\Models\File;
 use App\Models\Folder;
@@ -11,7 +12,9 @@ use App\Models\SharingPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class ShareController extends Controller
 {
@@ -59,6 +62,8 @@ class ShareController extends Controller
             ]
         );
 
+        $share->load(['shareable', 'targetUser', 'grantedBy']);
+
         ActivityLog::create([
             'actor_id' => $request->user()?->id,
             'action' => 'files.share_internal',
@@ -68,6 +73,18 @@ class ShareController extends Controller
             'user_agent' => $request->userAgent(),
             'created_at' => now(),
         ]);
+
+        try {
+            if ($share->targetUser?->email) {
+                Mail::to($share->targetUser->email)->send(new ShareReceivedMail(
+                    share: $share,
+                    shareTitle: $this->shareTitle($share),
+                    shareUrl: $this->shareUrl($share),
+                ));
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
 
         return response()->json($share, 201);
     }
@@ -95,6 +112,7 @@ class ShareController extends Controller
     public function mine(Request $request): JsonResponse
     {
         $shares = Share::query()
+            ->with(['shareable', 'grantedBy', 'targetUser'])
             ->where('target_user_id', $request->user()->id)
             ->where(function ($query): void {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
@@ -103,5 +121,29 @@ class ShareController extends Controller
             ->paginate(20);
 
         return response()->json($shares);
+    }
+
+    private function shareTitle(Share $share): string
+    {
+        if ($share->shareable instanceof File) {
+            return $share->shareable->original_name;
+        }
+
+        if ($share->shareable instanceof Folder) {
+            return $share->shareable->name;
+        }
+
+        return 'an item';
+    }
+
+    private function shareUrl(Share $share): string
+    {
+        $frontendUrl = rtrim((string) config('app.url'), '/');
+
+        if ($share->shareable instanceof Folder) {
+            return $frontendUrl.'/folders/'.$share->shareable->id;
+        }
+
+        return $frontendUrl.'/shared';
     }
 }

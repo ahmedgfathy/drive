@@ -7,4 +7,7 @@ export default {
   share(payload) {
     return api.post('/shares', payload);
   },
+  list(params = {}) {
+    return api.get('/shares/me', { params });
+  },
 };
