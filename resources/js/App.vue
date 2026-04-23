@@ -21,6 +21,10 @@
       </nav>
 
       <div class="drive-navbar__actions">
+        <button v-if="showInstallShortcut && !isInstallPromptVisible" class="install-chip" type="button" @click="refreshVisibility">
+          Install App
+        </button>
+
         <button class="notice-btn" type="button" @click="isNoticeOpen = !isNoticeOpen">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 2a6 6 0 0 0-6 6v3.6c0 .9-.3 1.8-.9 2.5L3.8 16a1 1 0 0 0 .8 1.6h14.8a1 1 0 0 0 .8-1.6l-1.3-1.9a4.4 4.4 0 0 1-.9-2.5V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 0 2.8-2H9.2A3 3 0 0 0 12 22Z" fill="currentColor"/>
@@ -49,6 +53,32 @@
       <RouterView />
     </main>
 
+    <div v-if="isInstallPromptVisible" class="pwa-prompt-backdrop">
+      <section class="pwa-prompt-card panel">
+        <div class="pwa-prompt-art">
+          <img class="pwa-prompt-icon" :src="pwaIconUrl" alt="PMS Drive app icon">
+          <div>
+            <p class="pwa-kicker">Install PMS Drive</p>
+            <h3>Put PMS Drive on {{ platformLabel }}</h3>
+          </div>
+        </div>
+
+        <p class="pwa-copy">{{ instructions }}</p>
+
+        <div class="pwa-bullets">
+          <span>Offline shell ready</span>
+          <span>Desktop launch icon</span>
+          <span>Mobile home screen access</span>
+        </div>
+
+        <div class="pwa-actions">
+          <button type="button" class="btn-primary" @click="installApp">
+            Install App
+          </button>
+        </div>
+      </section>
+    </div>
+
     <footer class="drive-footer">
       <div>
         <strong>Petroleum Marine Services</strong>
@@ -69,6 +99,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
+import { usePwaInstall } from './composables/usePwaInstall';
 import { useAuthStore } from './stores/auth';
 import sharesService from './services/shares.service';
 
@@ -77,10 +108,31 @@ const router = useRouter();
 const auth = useAuthStore();
 const isNoticeOpen = ref(false);
 const notifications = ref([]);
+const {
+  install,
+  instructions,
+  isInstallPromptVisible,
+  isInstalled,
+  platformHint,
+  refreshVisibility,
+} = usePwaInstall();
 
 const showPrivateShell = computed(() => Boolean(route.meta.requiresAuth));
 const displayName = computed(() => auth.user?.name || 'PMS User');
 const notificationCount = computed(() => notifications.value.length);
+const pwaIconUrl = `${import.meta.env.BASE_URL}pwa/icon-192.png`;
+const showInstallShortcut = computed(() => !isInstalled.value);
+const platformLabel = computed(() => {
+  if (platformHint.value === 'android') {
+    return 'Android';
+  }
+
+  if (platformHint.value === 'ios') {
+    return 'iPhone';
+  }
+
+  return 'your device';
+});
 const canAccessAdmin = computed(() => {
   if (!auth.user) {
     return false;
@@ -119,6 +171,10 @@ watch(
 const signOut = async () => {
   await auth.logout();
   await router.push('/');
+};
+
+const installApp = async () => {
+  await install();
 };
 
 const loadNotifications = async () => {

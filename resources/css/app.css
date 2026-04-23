@@ -198,6 +198,116 @@ button {
     border: 1px solid rgba(7, 41, 73, 0.14);
 }
 
+.install-chip {
+    border-radius: 999px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #0d5f95, #072949);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 10px 18px rgba(7, 41, 73, 0.22);
+}
+
+.pwa-prompt-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background:
+        radial-gradient(circle at top right, rgba(242, 174, 46, 0.16), transparent 28%),
+        linear-gradient(180deg, rgba(2, 18, 34, 0.44), rgba(2, 18, 34, 0.62));
+    backdrop-filter: blur(10px);
+}
+
+.pwa-prompt-card {
+    width: min(520px, calc(100vw - 28px));
+    padding: 24px;
+    border-radius: 26px;
+    border: 1px solid rgba(7, 41, 73, 0.12);
+    background:
+        radial-gradient(circle at top right, rgba(242, 174, 46, 0.12), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 249, 254, 0.98));
+    box-shadow: 0 28px 56px rgba(3, 27, 51, 0.22);
+}
+
+.pwa-prompt-art {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    align-items: center;
+}
+
+.pwa-prompt-icon {
+    width: 76px;
+    height: 76px;
+    border-radius: 22px;
+    border: 1px solid rgba(7, 41, 73, 0.14);
+    box-shadow: 0 16px 30px rgba(7, 41, 73, 0.16);
+}
+
+.pwa-kicker {
+    margin: 0 0 6px;
+    color: var(--pms-sea);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pwa-prompt-card h3 {
+    margin: 0;
+    color: var(--pms-deep);
+    font-size: clamp(24px, 3vw, 30px);
+    line-height: 1.1;
+}
+
+.pwa-copy {
+    margin: 18px 0 0;
+    color: var(--pms-muted);
+    line-height: 1.6;
+}
+
+.pwa-bullets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.pwa-bullets span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 9px 12px;
+    background: rgba(7, 41, 73, 0.06);
+    color: var(--pms-navy);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pwa-bullets span::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--pms-gold), #f7c25b);
+    box-shadow: 0 0 0 3px rgba(242, 174, 46, 0.14);
+}
+
+.pwa-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pwa-actions .btn-primary,
+.pwa-actions .btn-ghost {
+    flex: 1;
+    min-height: 48px;
+}
+
 .public-shell {
     min-height: 100vh;
     background: transparent;
@@ -1016,6 +1126,25 @@ button {
 
     .drive-navbar__brand-text span {
         display: none;
+    }
+
+    .pwa-prompt-card {
+        padding: 20px;
+        border-radius: 22px;
+    }
+
+    .pwa-prompt-art {
+        grid-template-columns: 1fr;
+        justify-items: start;
+    }
+
+    .pwa-prompt-icon {
+        width: 68px;
+        height: 68px;
+    }
+
+    .pwa-actions {
+        flex-direction: column;
     }
 }
 
