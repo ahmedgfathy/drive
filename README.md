@@ -1,58 +1,106 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PMS Drive
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+PMS Drive is a secure internal document workspace for Petroleum Marine Services (PMS). It centralizes offshore and project documents, enforces security policies, and provides role-based sharing and auditing so teams can collaborate without losing governance.
 
-## About Laravel
+## Meaning and Purpose
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Offshore operations generate critical documents that must be controlled, searchable, and traceable. PMS Drive provides a single place to upload, organize, share, and audit these files while keeping storage limits and security policies enforced by administrators.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Key Modules
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Authentication and access control
+	- Token-based login for the SPA and API
+	- Role and permission management for granular access
+- Drive and folder explorer
+	- Personal root folders per employee
+	- Folder tree navigation, file metadata, and downloads
+- Upload and storage management
+	- Quota enforcement and usage tracking
+	- File checksum tracking and metadata capture
+- Internal sharing
+	- Share files or folders with permission and expiry rules
+	- Sharing policy controls (enable/disable, limits)
+- Trash and restore
+	- Soft delete for files and folders with restore support
+- Administration console
+	- Dashboard stats, users, roles, storage, audit logs
+	- Security policies (password rules, lockouts, sessions)
+	- System settings and backup configuration
+- Auditing and activity logs
+	- Track login activity and document actions
+- Background jobs (queue ready)
+	- Virus scanning, archive extraction, thumbnail generation
 
-## Learning Laravel
+## Example Scenarios
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. Secure document upload and sharing
+	 - An engineer uploads a new inspection report to their project folder.
+	 - The system checks quota, stores the file, and logs the activity.
+	 - The engineer shares the report with a supervisor, with an expiry date enforced by policy.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. Admin governance and compliance
+	 - An admin reviews the dashboard for storage usage and recent actions.
+	 - The admin updates security policies and revokes active sessions if needed.
+	 - Audit logs provide a trace for every upload, download, and share.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+3. Controlled retention and recovery
+	 - A file is deleted by mistake and moved to Trash.
+	 - The owner restores it, and the restore is logged for traceability.
 
-## Agentic Development
+## Tech Stack
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- Backend: Laravel 13, PHP 8.3, Sanctum, Fortify, Spatie Permissions
+- Frontend: Vue 3, Vite, Pinia, Vue Router, Tailwind CSS, Axios
+- Storage: Local filesystem (configurable via Laravel filesystem)
+- Queue: Laravel queue workers (jobs included for scanning and previews)
+
+## Project Structure (High Level)
+
+- API routes and controllers are in `routes/api.php` and `app/Http/Controllers/Api`
+- Frontend SPA is in `resources/js` and rendered by `resources/views/app.blade.php`
+- File, folder, share, and policy data are in `app/Models`
+- Background jobs are in `app/Jobs`
+
+## API Overview
+
+- Auth: `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`
+- Drive: `/api/folders/*`, `/api/files/*`, `/api/files/upload`
+- Sharing: `/api/shares/*`
+- Storage: `/api/storage/usage`, `/api/storage/quotas/*`
+- Audit: `/api/audit-logs`
+- Admin: `/api/admin/*`
+
+## Setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Or run the built-in setup script:
 
-## Contributing
+```bash
+composer run setup
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Development
 
-## Code of Conduct
+```bash
+composer run dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+This starts the Laravel server, queue worker, log viewer, and Vite dev server.
 
-## Security Vulnerabilities
+## Testing
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+composer run test
+```
 
-## License
+## Screenshots
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Screenshots are not yet included in the repository. Share the image files you want to include (login, drive explorer, admin dashboard, etc.) and where to store them, and this section will be updated with embedded images.
