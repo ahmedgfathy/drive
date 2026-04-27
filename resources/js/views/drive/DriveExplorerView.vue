@@ -12,10 +12,11 @@
             <button type="button" class="admin-action-btn" @click="triggerFolderUpload">Upload Folder</button>
             <button type="button" class="admin-action-btn" @click="selectAllItems">Select All</button>
             <button type="button" class="admin-action-btn" :disabled="!hasSelection" @click="clearAllSelection">Clear Selection</button>
+            <button type="button" class="admin-action-btn" :disabled="!hasSelection || !canShare" @click="openShareDialog">Share</button>
             <button type="button" class="admin-action-btn" :disabled="!canRename" @click="beginRename">Rename</button>
             <button type="button" class="admin-action-btn" :disabled="!canMove" @click="moveSelected">Move</button>
             <button type="button" class="admin-action-btn" :disabled="!hasSelection" @click="deleteSelected">Delete</button>
-            <button type="button" class="admin-action-btn" :disabled="selectedFileIds.length !== 1" @click="downloadSelected">Download</button>
+            <button type="button" class="admin-action-btn" :disabled="!hasSelection" @click="downloadSelected">Download</button>
           </div>
 
           <div class="menu-row explorer-move-tools">
@@ -83,14 +84,24 @@
         <span>{{ formatBytes(file.size_bytes || 0) }}</span>
       </article>
     </div>
+
+    <ShareDialog
+      :open="isShareDialogOpen"
+      :items="selectedItems"
+      @close="isShareDialogOpen = false"
+      @created="handleShareCreated"
+    />
   </section>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import ShareDialog from '../../components/drive/ShareDialog.vue';
 import filesService from '../../services/files.service';
 import foldersService from '../../services/folders.service';
+import { useAuthStore } from '../../stores/auth';
 
+const auth = useAuthStore();
 const currentFolder = ref(null);
 const folders = ref([]);
 const files = ref([]);
@@ -103,10 +114,16 @@ const renameValue = ref('');
 const filesInput = ref(null);
 const folderInput = ref(null);
 const isDragOver = ref(false);
+const isShareDialogOpen = ref(false);
 
 const hasSelection = computed(() => selectedFolderIds.value.length > 0 || selectedFileIds.value.length > 0);
+const canShare = computed(() => (auth.user?.permissions || []).includes('files.share_internal'));
 const canRename = computed(() => (selectedFolderIds.value.length + selectedFileIds.value.length) === 1);
 const canMove = computed(() => hasSelection.value && Boolean(moveTargetId.value));
+const selectedItems = computed(() => [
+  ...selectedFolderIds.value.map((id) => ({ shareable_type: 'folder', shareable_id: id })),
+  ...selectedFileIds.value.map((id) => ({ shareable_type: 'file', shareable_id: id })),
+]);
 const filePreviewMap = computed(() => {
   const map = {};
 
@@ -164,6 +181,14 @@ const selectAllItems = () => {
 
 const clearAllSelection = () => {
   clearSelection();
+};
+
+const openShareDialog = () => {
+  if (!hasSelection.value) {
+    return;
+  }
+
+  isShareDialogOpen.value = true;
 };
 
 const toggleFileSelection = (fileId) => {
@@ -255,21 +280,29 @@ const deleteSelected = async () => {
 };
 
 const downloadSelected = async () => {
-  if (selectedFileIds.value.length !== 1) {
+  if (!hasSelection.value) {
     return;
   }
 
-  const fileId = selectedFileIds.value[0];
-  const fileRow = files.value.find((row) => row.id === fileId);
-  const response = await filesService.download(fileId);
+  const response = await filesService.downloadArchive([
+    ...selectedFolderIds.value.map((id) => ({ type: 'folder', id })),
+    ...selectedFileIds.value.map((id) => ({ type: 'file', id })),
+  ]);
+  const disposition = response.headers['content-disposition'] || '';
+  const match = disposition.match(/filename="?([^"]+)"?/i);
+  const filename = match?.[1] || 'pms-drive-download.zip';
   const blobUrl = URL.createObjectURL(response.data);
   const link = document.createElement('a');
   link.href = blobUrl;
-  link.download = fileRow?.original_name || 'download';
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(blobUrl);
+};
+
+const handleShareCreated = () => {
+  // Keep the current selection visible so the modal result still matches what the user shared.
 };
 
 const reloadCurrent = async () => {

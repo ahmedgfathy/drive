@@ -17,6 +17,7 @@ class ShareReceivedMail extends Mailable
         public readonly Share $share,
         public readonly string $shareTitle,
         public readonly string $shareUrl,
+        public readonly string $loginUrl,
     ) {
     }
 

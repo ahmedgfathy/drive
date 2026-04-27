@@ -19,11 +19,13 @@ class FilePolicy
 
         return $file->shares()
             ->where('target_user_id', $user->id)
+            ->where('channel', 'internal')
             ->where(function ($query): void {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
             })
-            ->exists();
+            ->exists()
+            || $this->hasSharedFolderAccess($user, $file);
     }
 
     public function download(User $user, File $file): bool
@@ -64,5 +66,49 @@ class FilePolicy
     private function ownsOrSuperAdmin(User $user, File $file): bool
     {
         return $file->owner_id === $user->id || $user->hasRole('super_admin');
+    }
+
+    private function hasSharedFolderAccess(User $user, File $file): bool
+    {
+        $file->loadMissing('folder');
+        $path = $file->folder?->path_cache;
+
+        if (! is_string($path) || $path === '') {
+            return false;
+        }
+
+        return \App\Models\Folder::query()
+            ->where('owner_id', $file->owner_id)
+            ->whereIn('path_cache', $this->ancestorPaths($path))
+            ->whereHas('shares', function ($query) use ($user): void {
+                $query->where('target_user_id', $user->id)
+                    ->where('channel', 'internal')
+                    ->where(function ($shareQuery): void {
+                        $shareQuery->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                    });
+            })
+            ->exists();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function ancestorPaths(string $path): array
+    {
+        $trimmed = trim($path, '/');
+        if ($trimmed === '') {
+            return ['/'];
+        }
+
+        $segments = explode('/', $trimmed);
+        $paths = [];
+
+        foreach ($segments as $index => $segment) {
+            $slice = array_slice($segments, 0, $index + 1);
+            $paths[] = '/'.implode('/', $slice);
+        }
+
+        return $paths;
     }
 }

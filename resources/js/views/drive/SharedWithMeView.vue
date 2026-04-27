@@ -7,6 +7,7 @@
           <strong>{{ shareTitle(share) }}</strong>
           <small>{{ shareMeta(share) }}</small>
         </div>
+        <RouterLink class="btn-ghost" :to="shareUrl(share)">Open</RouterLink>
       </li>
     </ul>
   </section>
@@ -14,6 +15,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import sharesService from '../../services/shares.service';
 
 const shares = ref([]);
@@ -37,6 +39,8 @@ const shareTitle = (share) => {
 
 const shareMeta = (share) => {
   const sender = share.granted_by?.full_name || share.granted_by?.name || 'PMS Drive';
-  return `${share.permission} access • shared by ${sender}`;
+  return `${share.permission} access | shared by ${sender}`;
 };
+
+const shareUrl = (share) => share.share_url || '/shared';
 </script>

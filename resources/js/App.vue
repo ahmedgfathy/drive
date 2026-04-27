@@ -36,8 +36,10 @@
           <h4>Shared With You</h4>
           <ul>
             <li v-for="item in notifications" :key="item.id">
-              <strong>{{ item.title }}</strong>
-              <span>{{ item.meta }}</span>
+              <RouterLink class="notice-panel__link" :to="item.url" @click="isNoticeOpen = false">
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.meta }}</span>
+              </RouterLink>
             </li>
           </ul>
         </aside>
@@ -85,19 +87,17 @@
         <p>Offshore Construction and Marine Services Digital Workspace.</p>
       </div>
       <div>
-        <p>Alexandria, Egypt</p>
-        <p>www.pmsoffshore.com</p>
-      </div>
-      <div>
-        <p>Tel: +20 (3) 487 8351</p>
-        <p>Email: info@pmsoffshore.com</p>
+        <p>PMS IT department Technical Support:</p>
+        <p>
+          <a class="drive-footer__mail-link" href="mailto:ahmed.fathy@pms.eg">Ahmed Fathy</a><span class="drive-footer__ext">Ext. 1026</span>
+        </p>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { usePwaInstall } from './composables/usePwaInstall';
 import { useAuthStore } from './stores/auth';
@@ -108,6 +108,7 @@ const router = useRouter();
 const auth = useAuthStore();
 const isNoticeOpen = ref(false);
 const notifications = ref([]);
+let notificationsInterval = null;
 const {
   install,
   instructions,
@@ -152,7 +153,12 @@ onMounted(async () => {
 
   if (auth.isAuthenticated) {
     await loadNotifications();
+    startNotificationsPolling();
   }
+});
+
+onBeforeUnmount(() => {
+  stopNotificationsPolling();
 });
 
 watch(
@@ -160,9 +166,11 @@ watch(
   async (userId) => {
     if (userId) {
       await loadNotifications();
+      startNotificationsPolling();
       return;
     }
 
+    stopNotificationsPolling();
     notifications.value = [];
   },
   { immediate: false }
@@ -185,9 +193,27 @@ const loadNotifications = async () => {
       id: item.id,
       title: sharedTitle(item),
       meta: sharedMeta(item),
+      url: notificationUrl(item),
     }));
   } catch {
     notifications.value = [];
+  }
+};
+
+const startNotificationsPolling = () => {
+  stopNotificationsPolling();
+
+  notificationsInterval = window.setInterval(async () => {
+    if (auth.isAuthenticated) {
+      await loadNotifications();
+    }
+  }, 30000);
+};
+
+const stopNotificationsPolling = () => {
+  if (notificationsInterval) {
+    window.clearInterval(notificationsInterval);
+    notificationsInterval = null;
   }
 };
 
@@ -212,4 +238,6 @@ const sharedMeta = (item) => {
 
   return `Shared by ${owner}`;
 };
+
+const notificationUrl = (item) => item.share_url || '/shared';
 </script>

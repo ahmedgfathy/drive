@@ -9,7 +9,26 @@ class FolderPolicy
 {
     public function view(User $user, Folder $folder): bool
     {
-        return $user->can('folders.view') && ($this->isPrivileged($user) || $folder->owner_id === $user->id);
+        if (! $user->can('folders.view')) {
+            return false;
+        }
+
+        if ($this->isPrivileged($user) || $folder->owner_id === $user->id) {
+            return true;
+        }
+
+        return Folder::query()
+            ->where('owner_id', $folder->owner_id)
+            ->whereIn('path_cache', $this->ancestorPaths($folder->path_cache))
+            ->whereHas('shares', function ($query) use ($user): void {
+                $query->where('target_user_id', $user->id)
+                    ->where('channel', 'internal')
+                    ->where(function ($shareQuery): void {
+                        $shareQuery->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                    });
+            })
+            ->exists();
     }
 
     public function create(User $user): bool
@@ -40,5 +59,26 @@ class FolderPolicy
     private function isOwnerOrSuperAdmin(User $user, Folder $folder): bool
     {
         return $folder->owner_id === $user->id || $user->hasRole('super_admin');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function ancestorPaths(string $path): array
+    {
+        $trimmed = trim($path, '/');
+        if ($trimmed === '') {
+            return ['/'];
+        }
+
+        $segments = explode('/', $trimmed);
+        $paths = [];
+
+        foreach ($segments as $index => $segment) {
+            $slice = array_slice($segments, 0, $index + 1);
+            $paths[] = '/'.implode('/', $slice);
+        }
+
+        return $paths;
     }
 }

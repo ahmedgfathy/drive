@@ -6,6 +6,7 @@ import DriveExplorerView from '../views/drive/DriveExplorerView.vue';
 import FolderView from '../views/drive/FolderView.vue';
 import TrashView from '../views/drive/TrashView.vue';
 import SharedWithMeView from '../views/drive/SharedWithMeView.vue';
+import PublicShareView from '../views/public/PublicShareView.vue';
 import UsersView from '../views/admin/UsersView.vue';
 import RolesView from '../views/admin/RolesView.vue';
 import StorageUsageView from '../views/admin/StorageUsageView.vue';
@@ -27,6 +28,7 @@ const router = createRouter({
     { path: '/folders/:id', name: 'drive.folder', component: FolderView, props: true, meta: { requiresAuth: true } },
     { path: '/trash', name: 'drive.trash', component: TrashView, meta: { requiresAuth: true } },
     { path: '/shared', name: 'drive.shared', component: SharedWithMeView, meta: { requiresAuth: true } },
+    { path: '/shared/external/:token', name: 'public.share', component: PublicShareView, props: true },
     {
       path: '/administration',
       component: AdministrationView,
@@ -93,6 +95,7 @@ router.afterEach((to) => {
     'drive.folder': 'PMS Drive | Folder',
     'drive.trash': 'PMS Drive | Trash',
     'drive.shared': 'PMS Drive | Shared',
+    'public.share': 'PMS Drive | Shared Link',
     'admin.dashboard': 'PMS Drive | Administration',
     'admin.users': 'PMS Drive | Administration | Users',
     'admin.roles': 'PMS Drive | Administration | Roles',

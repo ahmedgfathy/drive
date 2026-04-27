@@ -11,8 +11,10 @@ use App\Http\Controllers\Api\Files\FileController;
 use App\Http\Controllers\Api\Files\FileUploadController;
 use App\Http\Controllers\Api\Folders\FolderController;
 use App\Http\Controllers\Api\Shares\ShareController;
+use App\Http\Controllers\Api\Shares\ShareTargetController;
 use App\Http\Controllers\Api\Storage\StorageUsageController;
 use App\Http\Controllers\Api\Users\UserController;
+use App\Http\Controllers\PublicShareController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function (): void {
@@ -36,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('folders/{folder}/restore', [FolderController::class, 'restore']);
 
     Route::get('files/search', [FileController::class, 'search']);
+    Route::post('files/download-archive', [FileController::class, 'downloadArchive']);
     Route::get('files/{file}', [FileController::class, 'show']);
     Route::patch('files/{file}', [FileController::class, 'update']);
     Route::delete('files/{file}', [FileController::class, 'destroy']);
@@ -43,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('files/{file}/download', [FileController::class, 'download']);
     Route::post('files/upload', [FileUploadController::class, 'store']);
 
+    Route::get('shares/policy', [ShareController::class, 'policy']);
+    Route::get('shares/targets', [ShareTargetController::class, 'index']);
     Route::post('shares', [ShareController::class, 'store']);
     Route::delete('shares/{share}', [ShareController::class, 'destroy']);
     Route::get('shares/me', [ShareController::class, 'mine']);
@@ -73,3 +78,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('backup-run', [SystemConfigController::class, 'triggerBackup']);
     });
 });
+
+Route::get('public/shares/{token}', [PublicShareController::class, 'show']);
+Route::get('public/shares/{token}/folders/{folder}', [PublicShareController::class, 'folder']);
+Route::get('public/shares/{token}/download', [PublicShareController::class, 'download']);
+Route::get('public/shares/{token}/files/{file}/download', [PublicShareController::class, 'download']);

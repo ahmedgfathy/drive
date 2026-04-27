@@ -12,6 +12,9 @@ export default {
   download(fileId) {
     return api.get(`/files/${fileId}/download`, { responseType: 'blob' });
   },
+  downloadArchive(items) {
+    return api.post('/files/download-archive', { items }, { responseType: 'blob' });
+  },
   update(fileId, payload) {
     return api.patch(`/files/${fileId}`, payload);
   },
