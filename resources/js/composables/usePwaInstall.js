@@ -10,6 +10,7 @@ export function usePwaInstall() {
   const isInstallPromptVisible = ref(false);
   const platformHint = ref('desktop');
   const installStatus = ref('');
+  const isSecureOrigin = ref(true);
 
   const canTriggerNativePrompt = computed(() => Boolean(deferredPrompt.value));
   const instructions = computed(() => {
@@ -44,12 +45,21 @@ export function usePwaInstall() {
     platformHint.value = 'desktop';
   };
 
+  const detectSecureOrigin = () => {
+    isSecureOrigin.value = window.isSecureContext || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  };
+
   const refreshVisibility = () => {
     isInstalled.value = isStandaloneMode();
-    isInstallPromptVisible.value = !isInstalled.value;
+    isInstallPromptVisible.value = !isInstalled.value && isSecureOrigin.value;
 
     if (isInstalled.value) {
       installStatus.value = '';
+      return;
+    }
+
+    if (!isSecureOrigin.value) {
+      installStatus.value = 'PMS Drive can only be installed from a secure HTTPS address. This production site is still running on HTTP, so the browser will block app installation until SSL is enabled.';
     }
   };
 
@@ -67,6 +77,7 @@ export function usePwaInstall() {
 
   onMounted(() => {
     detectPlatform();
+    detectSecureOrigin();
     refreshVisibility();
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     window.addEventListener('appinstalled', onInstalled);
@@ -79,6 +90,12 @@ export function usePwaInstall() {
 
   const install = async () => {
     installStatus.value = '';
+
+    if (!isSecureOrigin.value) {
+      installStatus.value = 'Installation is blocked because this site is not secure yet. Open PMS Drive on HTTPS after SSL is enabled for drive.pms.eg.';
+      refreshVisibility();
+      return false;
+    }
 
     if (!deferredPrompt.value) {
       if (platformHint.value === 'ios' && typeof navigator.share === 'function') {
@@ -128,6 +145,7 @@ export function usePwaInstall() {
   return {
     install,
     instructions,
+    isSecureOrigin,
     isInstallPromptVisible,
     isInstalled,
     installStatus,

@@ -412,6 +412,10 @@ class ShareController extends Controller
             return true;
         }
 
+        if ($this->matchesOwnerIdentity($user, $shareable)) {
+            return true;
+        }
+
         if ($shareable instanceof File) {
             return $this->fileSharedWithUser($user, $shareable)
                 || $this->folderPathSharedWithUser($user, $shareable->owner_id, $shareable->folder?->path_cache);
@@ -450,6 +454,41 @@ class ShareController extends Controller
                     });
             })
             ->exists();
+    }
+
+    private function matchesOwnerIdentity(User $user, File|Folder $shareable): bool
+    {
+        $shareable->loadMissing('owner');
+        $owner = $shareable->owner;
+
+        if (! $owner) {
+            return false;
+        }
+
+        $candidatePairs = [
+            [$user->employee_id, $owner->employee_id],
+            [$user->email, $owner->email],
+            [$user->ext_id, $owner->ext_id],
+            [$user->name, $owner->name],
+        ];
+
+        foreach ($candidatePairs as [$left, $right]) {
+            $normalizedLeft = $this->normalizeIdentityValue($left);
+            $normalizedRight = $this->normalizeIdentityValue($right);
+
+            if ($normalizedLeft !== null && $normalizedLeft === $normalizedRight) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeIdentityValue(?string $value): ?string
+    {
+        $normalized = mb_strtolower(trim((string) $value));
+
+        return $normalized !== '' ? $normalized : null;
     }
 
     /**
