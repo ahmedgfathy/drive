@@ -11,7 +11,7 @@ APP_URL="${APP_URL:-http://drive.pms.eg}"
 FRONTEND_URL="${FRONTEND_URL:-http://drive.pms.eg}"
 SANCTUM_DOMAINS="${SANCTUM_DOMAINS:-drive.pms.eg}"
 
-run_remote_bash <<REMOTE
+remote_script="$(cat <<'REMOTE'
 set -euo pipefail
 cd /home/xinreal/drive
 
@@ -19,16 +19,7 @@ echo "== Current app state =="
 php artisan about | sed -n '1,80p'
 
 echo "== Ensure MySQL database and user =="
-sudo mysql -uroot <<SQL
-CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS}';
-CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
-ALTER USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS}';
-ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
-GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'127.0.0.1';
-GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
-FLUSH PRIVILEGES;
-SQL
+echo "Using existing MySQL database configuration for ${DB_NAME}"
 
 echo "== Clear Laravel caches before DB switch =="
 php artisan optimize:clear || true
@@ -106,31 +97,31 @@ $mysql->exec('SET FOREIGN_KEY_CHECKS=1');
 PHP
 
 echo "== Update production .env =="
-php <<PHP
+php <<'PHP'
 <?php
-\$path = '/home/xinreal/drive/.env';
-\$contents = file_get_contents(\$path);
-\$updates = [
+$path = '/home/xinreal/drive/.env';
+$contents = file_get_contents($path);
+$updates = [
     'APP_ENV' => 'production',
     'APP_DEBUG' => 'false',
-    'APP_URL' => '${APP_URL}',
-    'FRONTEND_URL' => '${FRONTEND_URL}',
-    'SANCTUM_STATEFUL_DOMAINS' => '${SANCTUM_DOMAINS}',
+    'APP_URL' => getenv('APP_URL'),
+    'FRONTEND_URL' => getenv('FRONTEND_URL'),
+    'SANCTUM_STATEFUL_DOMAINS' => getenv('SANCTUM_DOMAINS'),
     'DB_CONNECTION' => 'mysql',
     'DB_HOST' => '127.0.0.1',
     'DB_PORT' => '3306',
-    'DB_DATABASE' => '${DB_NAME}',
-    'DB_USERNAME' => '${DB_USER}',
-    'DB_PASSWORD' => '${DB_PASS}',
+    'DB_DATABASE' => getenv('DB_NAME'),
+    'DB_USERNAME' => getenv('DB_USER'),
+    'DB_PASSWORD' => getenv('DB_PASS'),
 ];
-foreach (\$updates as \$key => \$value) {
-    if (preg_match('/^' . preg_quote(\$key, '/') . '=.*/m', \$contents)) {
-        \$contents = preg_replace('/^' . preg_quote(\$key, '/') . '=.*/m', \$key . '=' . \$value, \$contents);
+foreach ($updates as $key => $value) {
+    if (preg_match('/^' . preg_quote($key, '/') . '=.*/m', $contents)) {
+        $contents = preg_replace('/^' . preg_quote($key, '/') . '=.*/m', $key . '=' . $value, $contents);
     } else {
-        \$contents .= PHP_EOL . \$key . '=' . \$value;
+        $contents .= PHP_EOL . $key . '=' . $value;
     }
 }
-file_put_contents(\$path, \$contents);
+file_put_contents($path, $contents);
 PHP
 
 echo "== Ensure storage symlink =="
@@ -152,11 +143,11 @@ php artisan view:cache
 php artisan event:cache
 
 echo "== Fix writable permissions =="
-sudo chgrp -R www-data storage bootstrap/cache
-sudo chmod -R ug+rwx storage bootstrap/cache
+echo "${SUDO_PASS}" | sudo -S chgrp -R www-data storage bootstrap/cache
+echo "${SUDO_PASS}" | sudo -S chmod -R ug+rwx storage bootstrap/cache
 
 echo "== Install queue worker service =="
-sudo tee /etc/systemd/system/pms-drive-queue.service >/dev/null <<'SERVICE'
+printf '%s\n' "${SUDO_PASS}" | sudo -S -p '' tee /etc/systemd/system/pms-drive-queue.service >/dev/null <<'SERVICE'
 [Unit]
 Description=PMS Drive Laravel Queue Worker
 After=network.target mariadb.service
@@ -173,11 +164,16 @@ ExecStart=/usr/bin/php /home/xinreal/drive/artisan queue:work --sleep=3 --tries=
 WantedBy=multi-user.target
 SERVICE
 
-sudo systemctl daemon-reload
-sudo systemctl enable --now pms-drive-queue.service
+echo "${SUDO_PASS}" | sudo -S systemctl daemon-reload
+echo "${SUDO_PASS}" | sudo -S systemctl enable --now pms-drive-queue.service
 
 echo "== Final verification =="
 php artisan about | sed -n '1,100p'
 systemctl is-active nginx php8.3-fpm mariadb pms-drive-queue || true
 curl -I -H 'Host: drive.pms.eg' http://127.0.0.1 | sed -n '1,5p'
 REMOTE
+)"
+
+SSHPASS="${PASSWORD}" sshpass -e ssh -tt -o StrictHostKeyChecking=no "${USER_NAME}@${HOST}" \
+  "export DB_NAME='${DB_NAME}' DB_USER='${DB_USER}' DB_PASS='${DB_PASS}' APP_URL='${APP_URL}' FRONTEND_URL='${FRONTEND_URL}' SANCTUM_DOMAINS='${SANCTUM_DOMAINS}' SUDO_PASS='${PASSWORD}'; bash -s" \
+  <<<"${remote_script}"
